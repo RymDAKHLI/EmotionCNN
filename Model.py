@@ -8,6 +8,7 @@ import torchvision.datasets as datasets
 from torch.autograd import Variable
 import shutil
 # For windowing
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -148,7 +149,7 @@ class EmotionNet():
         print('Test, Prec: {}'.format(
               top1.avg))
 
-    def train_model(self, datadir, validdir, outprefix, epochs=10, csvout=None):
+    def train_model(self, datadir,  outprefix, epochs=10, csvout=None):
         batch_size = 48
         num_workers = 4
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -164,16 +165,7 @@ class EmotionNet():
             pin_memory=torch.cuda.is_available()
         )
 
-        valid_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(validdir, transforms.Compose([
-                transforms.Scale(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ])),
-            batch_size=batch_size, shuffle=False, num_workers=num_workers,
-            pin_memory=torch.cuda.is_available()
-        )
+        
 
         criterion = nn.CrossEntropyLoss()
         if torch.cuda.is_available():
@@ -211,42 +203,11 @@ class EmotionNet():
                 if i % 5 == 0:
                     logging.info('Epoch: {} {}/{}\nLoss: {}\nPrec: {}'.format(
                       e, i, len(train_loader), losses.avg, top1.avg))
-            # Valid
-            lossavg, topavg = self._valid_model(valid_loader)
-                
-            logging.info('Epoch: {}, Validation Loss: {}, Prec: {}'.format(
-                  e, lossavg, topavg))
-            if csvout is not None:
-                # Epoch, training loss, training accuracy, valid lossavg, topavg
-                print('{}, {}, {}, {}, {}'.format(e, losses.avg, top1.avg, 
-                      lossavg, topavg), flush=True, file=csvf)
-            top = False
-            if self.bestaccur < top1.avg:
-                self.bestaccur = top1.avg
-                top = True
-            self.save_checkpoint(top, filename=outprefix + '.pth.tar')
+            
         if csvout is not None:
             csvf.close()
     
-    def valid_model(self, validdir):
-        batch_size = 16
-        num_workers = 4
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
-
-        valid_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(validdir, transforms.Compose([
-                transforms.Scale(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ])),
-            batch_size=batch_size, shuffle=False, num_workers=num_workers,
-            pin_memory=torch.cuda.is_available()
-        )
-
-        loss, acc = self._valid_model(valid_loader)
-        logging.info('Loss: {}, Precision: {}'.format(loss, acc))
+   
     
     def classify_one_image(self, imgf,
             classes=['afraid', 'angry', 'disgusted', 'happy', 'neutral', 'sad', 'surprised']):
@@ -290,32 +251,4 @@ class EmotionNet():
         plt.title(classes[clss])
         plt.show()
 
-    def _valid_model(self, valid_loader): 
-        self.model.eval()
-        losses = AverageMeter()
-        top1 = AverageMeter()
-        confusion = Confusion(valid_loader)
-        criterion = nn.CrossEntropyLoss()
-
-        if torch.cuda.is_available():
-            criterion = criterion.cuda()
-
-        for i, (input, target) in enumerate(valid_loader):
-            if torch.cuda.is_available():
-                target = target.cuda(async=True)
-            input_var = Variable(input, volatile=True)
-            if torch.cuda.is_available():
-                input_var = input_var.cuda()
-            target_var = Variable(target, volatile=True)
-
-            output = self.model(input_var)
-            confusion.add(output, target)
-            loss = criterion(output, target_var)
-
-            prec1 = accuracy(output.data, target, topk=(1,))
-            losses.update(loss.data, input.size(0))
-            top1.update(prec1[0], input.size(0))
-        print('Confusion Matrix')
-        confusion.print_confusion()
-        confusion.print_latex(top1.avg)
-        return losses.avg, top1.avg
+   
