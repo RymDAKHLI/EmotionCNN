@@ -142,7 +142,7 @@ class EmotionNet():
             prec1 = accuracy(output.data, target_out, topk=(1,))
             top1.update(prec1[0], input.size(0))
             img = np.rollaxis(img, 0, 3)
-            plt.title(prec1[0].cpu().numpy()[0])
+            plt.title(prec1[0].cpu().numpy())
             plt.imshow(img)
             plt.pause(0.01)
             
