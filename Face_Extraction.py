@@ -1,4 +1,3 @@
-import face_detector
 import os
 from multiprocessing import Pool
 import sys
@@ -94,7 +93,7 @@ def _inner(arg):
 
 
 def get_folders_kdef():
-    fname = 'KDEF/KDEF'
+    fname = 'KDEF'
     outdir = 'train'
     emotion = {
         'AF': "afraid",
