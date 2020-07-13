@@ -139,7 +139,7 @@ class EmotionNet():
 
             output = self.model(input_var)
             prec1 = accuracy(output.data, target_out, topk=(1,))
-            top1.update(prec1[0][0], input.size(0))
+            top1.update(prec1[0], input.size(0))
             img = np.rollaxis(img, 0, 3)
             plt.title(prec1[0].cpu().numpy()[0])
             plt.imshow(img)
@@ -201,8 +201,8 @@ class EmotionNet():
 
                 loss = criterion(output, target_var)
                 prec1 = accuracy(output.data, target, topk=(1,))
-                losses.update(loss.data[0], input.size(0))
-                top1.update(prec1[0][0], input.size(0))
+                losses.update(loss.data, input.size(0))
+                top1.update(prec1[0], input.size(0))
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -313,8 +313,8 @@ class EmotionNet():
             loss = criterion(output, target_var)
 
             prec1 = accuracy(output.data, target, topk=(1,))
-            losses.update(loss.data[0], input.size(0))
-            top1.update(prec1[0][0], input.size(0))
+            losses.update(loss.data, input.size(0))
+            top1.update(prec1[0], input.size(0))
         print('Confusion Matrix')
         confusion.print_confusion()
         confusion.print_latex(top1.avg)
