@@ -17,7 +17,7 @@ import tempfile
 import face_detector
 import os.path
 from PIL import Image
-import extract_faces
+import Face_Extraction
 
 import logging
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
