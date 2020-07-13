@@ -1,4 +1,4 @@
-import face_detector
+import Face_Detector
 import os
 from multiprocessing import Pool
 
