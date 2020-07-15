@@ -112,41 +112,59 @@ class EmotionNet():
             self.model.load_state_dict(torch.load(filename))
         else:
             self.model.load_state_dict(torch.load(filename, lambda storage, loc: storage))
+
+
     def test_model_show(self, testdir, show=False):
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                         std=[0.229, 0.224, 0.225])
-        testdata = datasets.ImageFolder(testdir, transforms.Compose([
-            transforms.Scale(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-        ]))
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        
+        test_loader = torch.utils.data.DataLoader(
+            datasets.ImageFolder(testdir, transforms.Compose([
+                    transforms.Scale(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+            ])),
+            
+        )
+        
+        confusion = Confusion(test_loader)
         criterion = nn.CrossEntropyLoss()
         if torch.cuda.is_available():
             criterion = criterion.cuda()
-        # Test
+            #test
         self.model.eval()
         losses = AverageMeter()
         top1 = AverageMeter()
-        for i, (input, target) in enumerate(testdata):
+
+        for i, (input, target) in enumerate(test_loader):
             img = np.copy(input.numpy())
             target_out = torch.LongTensor(1, 1).zero_()
             target_out[0][0] = target
             if torch.cuda.is_available():
                 target_out = target_out.cuda(async=True)
-            input_var = Variable(normalize(input).view(1, *input.size()), volatile=True)
+            input_var = Variable(input, volatile=True)
             if torch.cuda.is_available():
                 input_var = input_var.cuda()
 
             output = self.model(input_var)
+            confusion.add(output, target)
             prec1 = accuracy(output.data, target_out, topk=(1,))
             top1.update(prec1[0], input.size(0))
             img = np.rollaxis(img, 0, 3)
             plt.title(prec1[0].cpu().numpy())
-            plt.imshow(img)
-            plt.pause(0.01)
-            
-        print('Test, Prec: {}'.format(
-              top1.avg))
+            #plt.imshow(img)
+            #plt.pause(0.01)
+        print('Confusion Matrix de test ')
+        confusion.print_confusion()
+        confusion.print_latex(top1.avg)
+        print('Test, Prec: {}'.format(top1.avg))
+
+
+
+    
+
+
+
+
 
     def train_model(self, datadir, outprefix, epochs=10, csvout=None):
         batch_size = 48
@@ -247,7 +265,37 @@ class EmotionNet():
 
         loss, acc = self._valid_model(valid_loader)
         logging.info('Loss: {}, Precision: {}'.format(loss, acc))
-    
+
+    def _valid_model(self, valid_loader): 
+        self.model.eval()
+        losses = AverageMeter()
+        top1 = AverageMeter()
+        confusion = Confusion(valid_loader)
+        criterion = nn.CrossEntropyLoss()
+
+        if torch.cuda.is_available():
+            criterion = criterion.cuda()
+
+        for i, (input, target) in enumerate(valid_loader):
+            if torch.cuda.is_available():
+                target = target.cuda(async=True)
+            input_var = Variable(input, volatile=True)
+            if torch.cuda.is_available():
+                input_var = input_var.cuda()
+            target_var = Variable(target, volatile=True)
+
+            output = self.model(input_var)
+            confusion.add(output, target)
+            loss = criterion(output, target_var)
+
+            prec1 = accuracy(output.data, target, topk=(1,))
+            losses.update(loss.data, input.size(0))
+            top1.update(prec1[0], input.size(0))
+        print('Confusion Matrix')
+        confusion.print_confusion()
+        confusion.print_latex(top1.avg)
+        return losses.avg, top1.avg
+
     def classify_one_image(self, imgf,
             classes=['afraid', 'angry', 'disgusted', 'happy', 'neutral', 'sad', 'surprised']):
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -289,33 +337,3 @@ class EmotionNet():
         plt.figtext(0.1, 0.10, ', '.join(['{:.3}'.format(a) for a in softmax.reshape(-1)]))
         plt.title(classes[clss])
         plt.show()
-
-    def _valid_model(self, valid_loader): 
-        self.model.eval()
-        losses = AverageMeter()
-        top1 = AverageMeter()
-        confusion = Confusion(valid_loader)
-        criterion = nn.CrossEntropyLoss()
-
-        if torch.cuda.is_available():
-            criterion = criterion.cuda()
-
-        for i, (input, target) in enumerate(valid_loader):
-            if torch.cuda.is_available():
-                target = target.cuda(async=True)
-            input_var = Variable(input, volatile=True)
-            if torch.cuda.is_available():
-                input_var = input_var.cuda()
-            target_var = Variable(target, volatile=True)
-
-            output = self.model(input_var)
-            confusion.add(output, target)
-            loss = criterion(output, target_var)
-
-            prec1 = accuracy(output.data, target, topk=(1,))
-            losses.update(loss.data, input.size(0))
-            top1.update(prec1[0], input.size(0))
-        print('Confusion Matrix')
-        confusion.print_confusion()
-        confusion.print_latex(top1.avg)
-        return losses.avg, top1.avg
