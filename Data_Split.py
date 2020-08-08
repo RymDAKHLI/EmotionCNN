@@ -5,8 +5,8 @@ import random
 def main():
     parser = argparse.ArgumentParser(description='Split data')
     parser.add_argument('--split-training', default=0.7, type=float)
-    parser.add_argument('--split-validation', default=0.2, type=float)
-    parser.add_argument('--split-testing', default=0.1, type=float)
+    parser.add_argument('--split-validation', default=0.1, type=float)
+    parser.add_argument('--split-testing', default=0.2, type=float)
     args = parser.parse_args()
     split(args)
 
