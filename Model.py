@@ -164,9 +164,7 @@ class EmotionNet():
 
 
 
-
-
-    def train_model(self, datadir, outprefix, epochs=10, csvout=None):
+    def train_model(self, datadir, validdir, outprefix, epochs=10, csvout=None):
         batch_size = 48
         num_workers = 4
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -183,7 +181,7 @@ class EmotionNet():
         )
 
         valid_loader = torch.utils.data.DataLoader(
-            datasets.ImageFolder(datadir, transforms.Compose([
+            datasets.ImageFolder(validdir, transforms.Compose([
                 transforms.Scale(256),
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
@@ -245,6 +243,8 @@ class EmotionNet():
             self.save_checkpoint(top, filename=outprefix + '.pth.tar')
         if csvout is not None:
             csvf.close()
+
+    
     
     def valid_model(self, datadir):
         batch_size = 16
