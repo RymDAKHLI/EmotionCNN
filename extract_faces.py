@@ -61,8 +61,62 @@ def get_folders_kdef():
     with Pool(8) as p:
         p.map(_inner, [(k, v, emotion, outdir, args) for k, v in eles])
 
+def get_folders_Dartmouth():
+    fname = 'Dartmouth'
+    outdir = 'train'
+    emotion = {
+        'Af': "afraid",
+        'An': "angry",
+        'Di': "disgusted",
+        'Ha': "happy",
+        'Ne': "neutral",
+        'Sa': "sad",
+        'Su': "surprised"
+    }
+    emotion_contents = dict(emotion)
+    for key in emotion_contents.keys():
+        emotion_contents[key] = []
+
+    for folder in emotion.values():
+        os.makedirs(outdir + '/' + folder, exist_ok=True)
+    for (dirpath, dirnames, filenames) in os.walk(fname):
+        for filen in [f for f in filenames if '.JPG' in f]:
+            filepath = os.path.join(dirpath, filen)
+            liste = ['Ha', 'An', 'Ne', 'Sa', 'Su', 'Di','Af']
+            for elem in liste:
+                pos = filen.find(elem)
+                if (pos != -1):
+                    break
+            #print(pos)
+            emotioncur = filen[pos:pos+2]
+            # Skip Full right and full left images
+            #if filen[6:8] in ['FR', 'FL']:
+             #   continue
+            try:
+                emotion_contents[emotioncur].append(filepath)
+            except Exception as e:
+                print('Warning: Odd file {}\nFailed due to {}'.format(
+                      filepath, e))
+                continue
+
+    args = {}
+    args['threshold'] = 0.0
+    args['window'] = False
+    args['ignore_multi'] = True
+    args['grow'] = 10 
+    args['resize'] = True
+    args['row_resize'] = 512
+    args['col_resize'] = 512
+    args['min_proportion'] = 0.1
+
+    eles = list(emotion_contents.items())
+
+    with Pool(8) as p:
+        p.map(_inner, [(k, v, emotion, outdir, args) for k, v in eles])
+
 def main():
     get_folders_kdef()
+    get_folders_Dartmouth()
 
 if __name__ == '__main__':
     main()
