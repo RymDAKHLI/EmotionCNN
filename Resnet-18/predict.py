@@ -3,7 +3,7 @@ import torch
 from pathlib import Path
 from PIL import Image
 from utils import get_transform
-from models import CustomNet, resnet18, vgg16
+from models import resnet18
 from constants import CLASSES
 
 
@@ -11,8 +11,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-file', '-i', type=str,
                         default=None, help='Path to an input file.')
-    parser.add_argument('--model', '-m', type=str, choices=['custom', 'vgg16', 'resnet18'],
-                        default='resnet18', help='Model name.')
+    parser.add_argument('--model', '-m', type=str, choices=['resnet18Fer2013', 'resnet18KDEF', 'resnet18Dartmouth'],
+                        default='resnet18Fer2013', help='Model name.')
     args = parser.parse_args()
     input_file_name = args.input_file
     model_name = args.model
