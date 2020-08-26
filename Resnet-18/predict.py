@@ -17,17 +17,17 @@ def main():
     input_file_name = args.input_file
     model_name = args.model
     img = Image.open(input_file_name)
-    if model_name == 'custom':
-        net = CustomNet()
-        weights = 'custom_net.pth'
-        transform = get_transform(48)
-    elif model_name == 'vgg16':
-        net = vgg16()
-        weights = 'vgg16.pth'
-        transform = get_transform(224)
-    elif model_name == 'resnet18':
+    if model_name == 'resnet18Fer2013':
         net = resnet18()
-        weights = 'resnet18.pth'
+        weights = 'resnet18Fer2013.pth'
+        transform = get_transform(48)
+    elif model_name == 'resnet18KDEF':
+        net = resnet18()
+        weights = 'resnet18KDEF.pth'
+        transform = get_transform(224)
+    elif model_name == 'resnet18Dartmouth':
+        net = resnet18()
+        weights = 'resnet18Dartmouth.pth'
         transform = get_transform(224)
     path = Path.joinpath(Path(), 'weights', weights)
     net.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
